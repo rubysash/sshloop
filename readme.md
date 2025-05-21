@@ -106,6 +106,20 @@ df.json
 - `command`: what will be executed via SSH
 - `parse`: regex used to extract desired result from output
 
+
+### 3. Manual COmmands
+
+Tested with chained and piped commands such as file creation and modification:
+
+```
+echo 'test_sshlooper_write_check' | tee -a /tmp/sshlooper_testfile && tail /tmp/sshlooper_testfile
+echo 'test_sshlooper_write_check2' | tee -a /tmp/sshlooper_testfile && tail /tmp/sshlooper_testfile
+```
+
+The test above did not clobber a file, and worked as expected.    Use EXTREME caution when running commands.   Test them first in a non destructive way before blasting them out!
+
+** Note on 1 Shot ** Your command must be written as 1 shot.  YOU cannot use any response prompt in parameko library.    This means you cannot use a sudo prompt without making the sudoers file passwordless for that user.
+
 ---
 
 ## Config file

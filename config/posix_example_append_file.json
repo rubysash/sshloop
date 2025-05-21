@@ -1,0 +1,7 @@
+{
+  "Test Write File": {
+    "command": "echo 'test_sshlooper_write_check' | tee -a /tmp/sshlooper_testfile && tail /tmp/sshlooper_testfile",
+    "parse": "(.+)",
+    "description": "Appends a test line to /tmp/sshlooper_testfile and shows the last few lines.  Modify this as needed, respect permissions!"
+  }
+}

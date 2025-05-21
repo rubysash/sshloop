@@ -1,5 +1,5 @@
 {
-  "Disk Usage": {
+  "Disk Free": {
     "command": "df -h /",
     "parse": "/dev/\\S+\\s+\\S+\\s+\\S+\\s+\\S+\\s+(\\S+)",
     "description": "Will Add.."

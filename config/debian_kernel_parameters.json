@@ -1,0 +1,8 @@
+{
+    "Check Swappiness + IP Forwarding": {
+      "command": "sysctl vm.swappiness net.ipv4.ip_forward",
+      "parse": "(.+)",
+      "description": "Checks common performance and network sysctl values.  Kernel Parameter Example"
+    }
+  }
+  

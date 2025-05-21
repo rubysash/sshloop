@@ -8,16 +8,19 @@ import paramiko
 import re
 from config import TIMEOUT, DEBUG
 
-
 def run_ssh_task(host_info, command_info, queue):
     """
     Connect to a single host, execute command, parse result, and return output.
-    
+
     Args:
         host_info (dict): Contains 'ip', 'port', 'username', 'password', and 'hostname'.
         command_info (dict): Contains 'command' and 'parse' regex.
         queue (Queue): Shared queue to return results to the GUI.
     """
+    import paramiko
+    import re
+    from config import TIMEOUT, DEBUG
+
     result = {
         "hostname": host_info.get("hostname"),
         "ip": host_info.get("ip"),
@@ -26,7 +29,6 @@ def run_ssh_task(host_info, command_info, queue):
         "error": ""
     }
 
-    # Validate required connection fields
     required_fields = ["ip", "port", "username", "password"]
     missing_fields = [field for field in required_fields if not host_info.get(field)]
     if missing_fields:
@@ -53,18 +55,35 @@ def run_ssh_task(host_info, command_info, queue):
             print(f"[DEBUG] Executing command: {command_info['command']}")
 
         stdin, stdout, stderr = ssh.exec_command(command_info["command"])
-        output = stdout.read().decode()
-        result["output"] = "PARSE_ERROR"
+        output = stdout.read().decode().strip()
+        error_output = stderr.read().decode().strip()
+        exit_status = stdout.channel.recv_exit_status()
 
         if DEBUG:
-            print(f"[DEBUG] Raw output from {host_info['ip']}:\n{output}")
+            print(f"[DEBUG] Raw stdout from {host_info['ip']}:\n{output}")
+            print(f"[DEBUG] Raw stderr from {host_info['ip']}:\n{error_output}")
+            print(f"[DEBUG] Exit status: {exit_status}")
+
+        result["output"] = "PARSE_ERROR" if output == "" else output
+
+        if exit_status != 0 or error_output:
+            result["error"] = f"Exit Code {exit_status}: {error_output}".strip()
 
         try:
-            match = re.search(command_info["parse"], output)
-            if match:
-                result["output"] = match.group(1)
+            pattern = command_info["parse"]
+            if pattern == "(.+)":
+                # Generic multi-line capture for manual or fallback commands
+                matches = re.findall(pattern, output)
+                if matches:
+                    result["output"] = "\n".join(matches)
+                else:
+                    result["error"] = "Parse failed: no matches found"
             else:
-                result["error"] = "Parse failed: pattern not found"
+                match = re.search(pattern, output)
+                if match:
+                    result["output"] = match.group(1)
+                elif not result["error"]:
+                    result["error"] = "Parse failed: pattern not found"
         except re.error as re_err:
             result["error"] = f"Regex error: {re_err}"
 

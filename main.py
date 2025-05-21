@@ -12,7 +12,7 @@ import os
 import threading
 import queue
 
-from config import MAX_THREADS, COMMANDS_DIR, BLACKLISTED_COMMAND_WORDS 
+from config import MAX_THREADS, COMMANDS_DIR, BLACKLISTED_COMMAND_WORDS, VERSION
 
 from file_handler import load_csv, load_json_commands, save_results
 from ssh_worker import run_ssh_task
@@ -38,7 +38,7 @@ class HostLoggerApp:
 
     def setup_ui(self):
         """Build all GUI widgets and layout."""
-        self.root.title("CSV SSH Logger")
+        self.root.title(f"SSH Looper v {VERSION}")
         self.root.geometry("900x600")
 
         self.main_frame = ttk.Frame(self.root)
@@ -372,7 +372,7 @@ class HostLoggerApp:
             if self.hosts[idx]["ip"] == result["ip"]:
                 self.hosts[idx].update(result)
                 if result["error"]:
-                    status = f"Error: {result['error']}"
+                    status = "Error"
                 else:
                     status = "Complete"
                 self.tree.set(item_id, "Status", status)

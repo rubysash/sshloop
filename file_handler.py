@@ -53,6 +53,51 @@ def load_csv(file_path):
 
 def load_json_commands(directory):
     """
+    Load all JSON command files from a directory, grouped by uppercased prefix.
+
+    Returns:
+        dict: {
+            "CP": {"Show Syslog": {...}},
+            "POSIX": {"Disk Usage": {...}},
+        }
+    """
+    from collections import defaultdict
+
+    command_map = defaultdict(dict)
+    required_keys = {"command", "parse", "description"}
+
+    for filename in os.listdir(directory):
+        if filename.endswith(".json"):
+            filepath = os.path.join(directory, filename)
+            try:
+                if os.path.getsize(filepath) == 0:
+                    print(f"Skipping empty file: {filename}")
+                    continue
+
+                with open(filepath, 'r') as f:
+                    command_data = json.load(f)
+                    if len(command_data) != 1:
+                        print(f"Skipping malformed JSON structure in: {filename}")
+                        continue
+
+                    key = list(command_data.keys())[0]
+                    command_details = command_data[key]
+
+                    if not isinstance(command_details, dict) or not required_keys.issubset(command_details.keys()):
+                        print(f"Skipping invalid command entry in {filename}: missing one of {sorted(required_keys)}")
+                        continue
+
+                    category = filename.split('_')[0].upper()
+                    command_map[category][key] = command_details
+
+            except json.JSONDecodeError:
+                print(f"Invalid JSON in file: {filename}")
+            except Exception as e:
+                print(f"Error loading {filename}: {e}")
+    return dict(command_map)
+
+def load_json_commands2(directory):
+    """
     Load all JSON command files from a directory, grouped by prefix.
 
     Returns:
