@@ -35,9 +35,9 @@ csv_host_logger/
 |                             # each function handles one host, runs ssh logic and puts result into the result queue
 ├── file_handler.py           # CSV/JSON/XLSX loading & saving after all threads finish, thread safe logging
 ├── config/
-│   └── commands_disk.json    # JSON with command + parse rules (can have multiple files)
+│   └── sample_files.json    # JSON files with 3 keys, sampled provided.  Categories determined by firstword_ in filename.
 ├── assets/
-│   └── example_hosts.csv     # Sample CSV for testing
+│   └── example_hosts.csv     # Sample CSV for testing.    hostname, ip, port.  Uses IP and Port
 ├── output/
 │   └── results_TIMESTAMP.xlsx  # Auto-saved output files
 ├── logs/
@@ -230,19 +230,34 @@ Enable `DEBUG = True` in the script to:
 - Use concurrent.futures.ThreadPoolExecutor or threading.Semaphore.
 
 
-## Error Handling
+## Error Handling 
 - centralized logger function is called with red/green/blue/white error codes for colorama if debugging, and plain text to the saved log.
 - Dedicated logfile captures base error and timestamp, including host info.
 - Passwords are not stored in logs
 
-
-## Parsing
- - goal is to parse single or multiple line responses
-
 ## Todo
 
-- implement the logging functionality
-- add csv error checking and validation
+- implement the logging functionality as per Error Handling specs
+- add/test csv error checking and validation
+- Add hostname into treeview
 - add colorama outputs in debugging
-- verify &&, | and other manual commands
+- Add regex help/notes to readme vs the basic (.+)
+- update treeview realtime with DTS of last run
+- Add list of useful commands
+- auto open the output xlsx in proper location
 
+## Done
+
+- autoopen xlsx after it's created
+- autocreate sample hosts.csv if needed
+- auto open from assets folder
+- Type password once per session optional save
+- verify &&, | and other manual commands
+- validate json with all 3 keys
+- add description to json
+- block danger words (cp, rm, fork bombs, etc)
+- Capture multi line output by default
+- test malformed json
+- test blank json
+- implement manual commands
+- warn on manual commands
