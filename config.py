@@ -14,3 +14,6 @@ HOST_CSV = "assets/hosts.csv"
 
 # Required CSV columns (case-sensitive)
 CSV_REQUIRED_COLUMNS = ["hostname", "ip", "port"]
+
+# Don't need to run these on a list of servers, at least not using this script!
+BLACKLISTED_COMMAND_WORDS = ["rm", "cp", "mv", "shutdown", "reboot", "dd", ":(){", "mkfs", ">:"]

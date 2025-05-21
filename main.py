@@ -12,7 +12,8 @@ import os
 import threading
 import queue
 
-from config import MAX_THREADS, COMMANDS_DIR
+from config import MAX_THREADS, COMMANDS_DIR, BLACKLISTED_COMMAND_WORDS 
+
 from file_handler import load_csv, load_json_commands, save_results
 from ssh_worker import run_ssh_task
 
@@ -243,19 +244,40 @@ class HostLoggerApp:
             messagebox.showerror("Missing Credentials", "Username or password is missing.")
             return
 
-        # Add credentials to each host
+        # Check for manual command
+        manual_command = self.manual_command_entry.get().strip()
+        command_info = {}
+
+        if manual_command:
+            confirm = messagebox.askyesno(
+                "Manual Command Confirmation",
+                "You are about to run a manual command on all hosts. Are you sure?"
+            )
+            if not confirm:
+                return
+
+            # Blacklist check
+            lowered_cmd = manual_command.lower()
+            if any(bad_word in lowered_cmd for bad_word in BLACKLISTED_COMMAND_WORDS):
+                messagebox.showerror("Blocked Command", f"The command contains a restricted word. Execution denied.")
+                return
+
+            command_info = {
+                "command": manual_command,
+                "parse": "(.+)"  # generic fallback regex
+            }
+        else:
+            command_info = self.commands.get(self.selected_command_key)
+            if not command_info:
+                messagebox.showerror("Command Error", "No command selected.")
+                return
+
         for host in self.hosts:
             host.update({
                 "username": username,
                 "password": password,
             })
 
-        command_info = self.commands.get(self.selected_command_key)
-        if not command_info:
-            messagebox.showerror("Command Error", "No command selected.")
-            return
-
-        # Use ThreadPoolExecutor to limit concurrency
         with ThreadPoolExecutor(max_workers=MAX_THREADS) as executor:
             for host in self.hosts:
                 executor.submit(run_ssh_task, host, command_info, self.queue)
@@ -287,10 +309,12 @@ class HostLoggerApp:
         except Exception as e:
             messagebox.showerror("Export Failed", str(e))
 
+
     def _get_timestamp_for_filename(self):
         """Utility to create timestamp string for filenames."""
         from datetime import datetime
         return datetime.now().strftime("%Y%m%d_%H%M%S")
+
 
     def poll_queue(self):
         try:
@@ -299,6 +323,7 @@ class HostLoggerApp:
                 self.update_tree(result)
         except queue.Empty:
             self.root.after(100, self.poll_queue)
+
 
     def ask_password_then_execute(self):
         if not self.hosts:
@@ -340,7 +365,6 @@ class HostLoggerApp:
         submit_btn.pack(pady=10)
 
         password_entry.bind("<Return>", on_submit)
-
 
 
     def update_tree(self, result):
