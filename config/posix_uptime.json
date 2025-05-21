@@ -2,7 +2,7 @@
     "Check Uptime": {
       "command": "uptime",
       "parse": "load average: (.+)",
-      "description": "Will Add.."
+      "description": "show the uptime command..."
     }
-  }
+}
   

@@ -67,6 +67,8 @@ Server30,192.168.7.30,22
 
 There will be different json files for each command.    The script will read the directory, validate all json then load them.   Typically these commands are single shot, one per file.
 
+** Commands are Extensible ** - just add more commands and test them if it's something you will do frequently.  Note that json requires specific formatting and special characters to be escaped.
+
 
 #### uptime example
 
@@ -74,10 +76,11 @@ uptime.json
 
 ```json
 {
-  "Check Uptime": {
-    "command": "uptime",
-    "parse": "load average: (.+)"
-  }
+    "Check Uptime": {
+      "command": "uptime",
+      "parse": "load average: (.+)",
+      "description": "show the uptime command..."
+    }
 }
 ```
 
@@ -87,9 +90,10 @@ df.json
 
 ```json
 {
-  "Disk Usage": {
+  "Disk Free": {
     "command": "df -h /",
-    "parse": "/dev/\\S+\\s+\\S+\\s+\\S+\\s+\\S+\\s+(\\S+)"
+    "parse": "/dev/\\S+\\s+\\S+\\s+\\S+\\s+\\S+\\s+(\\S+)",
+    "description": "Shows percent free.   Should always be at least 20 percent"
   }
 }
 ```
@@ -216,10 +220,10 @@ Enable `DEBUG = True` in the script to:
 ## Parsing
  - goal is to parse single or multiple line responses
 
-
 ## Todo
 
 - implement the logging functionality
 - add csv error checking and validation
 - add colorama outputs in debugging
-- add description for each command to explain it for jr users
+- verify &&, | and other manual commands
+
