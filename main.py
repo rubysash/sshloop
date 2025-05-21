@@ -31,6 +31,10 @@ class HostLoggerApp:
         self.username_entry.insert(0, "root")
         self.load_commands(COMMANDS_DIR)
 
+        self.cached_password = None  # cache session password possibility
+        self.save_password_session = tk.BooleanVar(value=False)  # Tracks checkbox state
+
+
     def setup_ui(self):
         """Build all GUI widgets and layout."""
         self.root.title("CSV SSH Logger")
@@ -169,7 +173,6 @@ class HostLoggerApp:
             self.load_hosts(file_path)
 
 
-
     def select_command_from_list(self, event=None):
         if not self.command_listbox.curselection():
             return
@@ -182,12 +185,12 @@ class HostLoggerApp:
         self.update_command_preview()
 
 
-
     def load_hosts(self, file_path):
         self.hosts = load_csv(file_path)
         for idx, host in enumerate(self.hosts):
             item_id = self.tree.insert("", "end", values=(host["ip"], host["port"], "Pending"))
             self.tree_items[item_id] = idx
+
 
     def load_commands(self, directory_path):
         categorized = load_json_commands(directory_path)
@@ -204,7 +207,6 @@ class HostLoggerApp:
         self.command_listbox.delete(0, tk.END)
         for item in sorted(dropdown_items):
             self.command_listbox.insert(tk.END, item)
-
 
 
     def update_command_preview(self, event=None):
@@ -303,20 +305,34 @@ class HostLoggerApp:
             messagebox.showerror("No Hosts Loaded", "You must load a hosts CSV file before running a command.")
             return
 
+        if self.cached_password and self.save_password_session.get():
+            self.ssh_password = self.cached_password
+            self.start_execution()
+            return
+
         password_popup = tk.Toplevel(self.root)
         password_popup.title("Enter SSH Password")
-        password_popup.geometry("300x120")
+        password_popup.geometry("300x150")
         password_popup.grab_set()
 
         label = ttk.Label(password_popup, text="SSH Password:")
-        label.pack(pady=10)
+        label.pack(pady=(10, 5))
 
         password_entry = ttk.Entry(password_popup, show="*")
         password_entry.pack(fill="x", padx=10)
         password_entry.focus_set()
 
+        save_checkbox = ttk.Checkbutton(
+            password_popup,
+            text="Save During Session",
+            variable=self.save_password_session
+        )
+        save_checkbox.pack(pady=5)
+
         def on_submit(event=None):
             self.ssh_password = password_entry.get()
+            if self.save_password_session.get():
+                self.cached_password = self.ssh_password
             password_popup.destroy()
             self.start_execution()
 
@@ -324,6 +340,7 @@ class HostLoggerApp:
         submit_btn.pack(pady=10)
 
         password_entry.bind("<Return>", on_submit)
+
 
 
     def update_tree(self, result):
