@@ -1,0 +1,5 @@
+hostname,ip,port
+SampleServer1,192.168.7.28,22
+SampleServer2,192.168.7.29,22
+SampleServer3,192.168.7.30,22
+

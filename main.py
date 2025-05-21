@@ -122,7 +122,6 @@ class HostLoggerApp:
         self.export_button.pack(side="left", expand=True, fill="x")
 
 
-
     def filter_commands(self, event=None):
         typed = self.command_entry.get().lower()
         self.command_listbox.delete(0, tk.END)
@@ -135,13 +134,40 @@ class HostLoggerApp:
 
     def browse_csv(self):
         """Open file dialog to choose and load a CSV file."""
-        initial_dir = os.path.abspath("assets")
+        script_dir = os.path.dirname(os.path.realpath(__file__))
+        assets_dir = os.path.join(script_dir, "assets")
+
+        # Ensure assets directory exists
+        if not os.path.isdir(assets_dir):
+            messagebox.showerror(
+                "Missing Folder",
+                f"'assets' directory not found at:\n{assets_dir}\nCreating it for you."
+            )
+            os.makedirs(assets_dir, exist_ok=True)
+            return
+
+        # Create default hosts.csv if missing
+        default_csv = os.path.join(assets_dir, "hosts.csv")
+        if not os.path.exists(default_csv):
+            with open(default_csv, "w", newline="") as f:
+                f.write("hostname,ip,port\n")
+                f.write("SampleServer,192.168.1.100,22\n")
+
+            messagebox.showinfo(
+                "Created Default CSV",
+                f"'hosts.csv' was missing and has been created at:\n{default_csv}\nYou may edit this file with your actual hosts."
+            )
+            return
+
+        # Proceed with file dialog
         file_path = filedialog.askopenfilename(
+            title="Select Host CSV File",
             filetypes=[("CSV Files", "*.csv")],
-            initialdir=initial_dir
+            initialdir=assets_dir
         )
         if file_path:
             self.load_hosts(file_path)
+
 
 
     def select_command_from_list(self, event=None):
@@ -185,11 +211,22 @@ class HostLoggerApp:
         key = getattr(self, 'selected_command_key', None)
         if not key:
             return
-        command = self.commands.get(key, {}).get("command", "")
+
+        command_info = self.commands.get(key, {})
+        command = command_info.get("command", "")
+        description = command_info.get("description", "No description provided.")
+
+        # Update command preview
         self.command_preview.config(state="normal")
         self.command_preview.delete("1.0", tk.END)
         self.command_preview.insert(tk.END, command)
         self.command_preview.config(state="disabled")
+
+        # Update description
+        self.command_description.config(state="normal")
+        self.command_description.delete("1.0", tk.END)
+        self.command_description.insert(tk.END, description)
+        self.command_description.config(state="disabled")
 
 
     def start_execution(self):
