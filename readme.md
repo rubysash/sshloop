@@ -4,6 +4,11 @@ A threaded Python Tkinter GUI tool to SSH into multiple hosts from a CSV file, r
 
 Built with `ttkbootstrap` (Darkly theme), `paramiko`, and `openpyxl`. Designed for Windows (Python 3.13+).
 
+
+# Demo
+![SSH Looper Demo](assets/sshlooper.v2.gif)
+
+
 ---
 
 ## Features

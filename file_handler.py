@@ -53,7 +53,7 @@ def load_csv(file_path):
 
 def load_json_commands(directory):
     """
-    Load all JSON command files from a directory, grouped by uppercased prefix.
+    Load all JSON command files from a directory, grouped by prefix.
 
     Returns:
         dict: {
