@@ -39,7 +39,7 @@ class HostLoggerApp:
     def setup_ui(self):
         """Build all GUI widgets and layout."""
         self.root.title(f"SSH Looper v {VERSION}")
-        self.root.geometry("900x600")
+        self.root.geometry("1150x700")
 
         self.main_frame = ttk.Frame(self.root)
         self.main_frame.pack(fill="both", expand=True)
@@ -53,15 +53,18 @@ class HostLoggerApp:
         self.load_button.pack(fill="x", pady=(5, 5))
 
         ## Treeview
-        self.tree = ttk.Treeview(self.left_frame, columns=("IP", "Port", "Status"), show="headings")
+        self.tree = ttk.Treeview(self.left_frame, columns=("Hostname", "IP", "Port", "Status"), show="headings")
+        self.tree.heading("Hostname", text="Hostname", anchor="w")
         self.tree.heading("IP", text="IP", anchor="w")
         self.tree.heading("Port", text="Port", anchor="w")
         self.tree.heading("Status", text="Status", anchor="w")
+        self.tree.column("Hostname", anchor="w")
         self.tree.column("IP", anchor="w")
         self.tree.column("Port", anchor="w")
         self.tree.column("Status", anchor="w")
         self.tree.pack(fill="both", expand=True)
         self.tree.bind("<<TreeviewSelect>>", self.display_output)
+
 
         ## Description Field 
         self.description_label = ttk.Label(self.left_frame, text="Command Description:")
@@ -189,7 +192,7 @@ class HostLoggerApp:
     def load_hosts(self, file_path):
         self.hosts = load_csv(file_path)
         for idx, host in enumerate(self.hosts):
-            item_id = self.tree.insert("", "end", values=(host["ip"], host["port"], "Pending"))
+            item_id = self.tree.insert("", "end", values=(host["hostname"], host["ip"], host["port"], "Pending"))
             self.tree_items[item_id] = idx
 
 

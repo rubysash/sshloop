@@ -7,7 +7,7 @@ Defines threading, logging, file structure, and input validation.
 MAX_THREADS = 5
 TIMEOUT = 10  # seconds
 DEBUG = True
-VERSION = .02
+VERSION = .03
 
 LOG_PATH = "logs/error.log"
 COMMANDS_DIR = "config"
