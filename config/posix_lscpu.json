@@ -1,0 +1,6 @@
+{
+  "CPU Model": {
+    "command": "lscpu | grep 'Model name'",
+    "parse": "Model name:\\s+(.+)"
+  }
+}

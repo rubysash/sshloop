@@ -1,0 +1,6 @@
+{
+  "Interface Status": {
+    "command": "ip link show",
+    "parse": "\\d+: (eth\\S+):.*state (\\w+)"
+  }
+}

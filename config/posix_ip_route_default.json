@@ -1,0 +1,6 @@
+{
+  "Default Route": {
+    "command": "ip route | grep default",
+    "parse": "default via (\\d+\\.\\d+\\.\\d+\\.\\d+)"
+  }
+}

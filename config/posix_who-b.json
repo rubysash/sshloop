@@ -1,0 +1,6 @@
+{
+  "Last Reboot": {
+    "command": "who -b",
+    "parse": "system boot\\s+(.+)"
+  }
+}

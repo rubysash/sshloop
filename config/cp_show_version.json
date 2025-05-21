@@ -1,0 +1,6 @@
+{
+  "System Version": {
+    "command": "clish -c 'show version all'",
+    "parse": "OS Version: (.+)"
+  }
+}

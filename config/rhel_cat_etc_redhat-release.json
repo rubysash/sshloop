@@ -1,0 +1,6 @@
+{
+  "RedHat OS Version": {
+    "command": "cat /etc/redhat-release",
+    "parse": "(.+)"
+  }
+}

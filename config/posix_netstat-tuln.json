@@ -1,0 +1,6 @@
+{
+  "Top Listening Ports": {
+    "command": "ss -tuln | grep LISTEN | head -n 1",
+    "parse": ":(\\d+) "
+  }
+}

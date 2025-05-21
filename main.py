@@ -1,0 +1,306 @@
+# main.py
+"""
+Main GUI for the SSH Host Logger tool.
+Layout: Hosts tree (left), command dropdown + preview + output display (right).
+"""
+from concurrent.futures import ThreadPoolExecutor 
+import tkinter as tk
+from tkinter import ttk, filedialog, messagebox
+from ttkbootstrap import Style
+
+import os
+import threading
+import queue
+
+from config import MAX_THREADS, COMMANDS_DIR
+from file_handler import load_csv, load_json_commands, save_results
+from ssh_worker import run_ssh_task
+
+class HostLoggerApp:
+
+    def __init__(self, root):
+        self.root = root
+        self.queue = queue.Queue()
+        self.hosts = []
+        self.commands = {}
+
+        self.selected_command_key = None
+        self.tree_items = {}  # maps item IDs to host indices
+
+        self.setup_ui()
+        self.username_entry.insert(0, "root")
+        self.load_commands(COMMANDS_DIR)
+
+    def setup_ui(self):
+        """Build all GUI widgets and layout."""
+        self.root.title("CSV SSH Logger")
+        self.root.geometry("900x600")
+
+        self.main_frame = ttk.Frame(self.root)
+        self.main_frame.pack(fill="both", expand=True)
+
+        # LEFT FRAME
+        self.left_frame = ttk.Frame(self.main_frame, width=450)
+        self.left_frame.pack(side="left", fill="both", expand=True)
+
+        self.load_button = ttk.Button(self.left_frame, text="Load Hosts CSV", command=self.browse_csv)
+        self.load_button.pack(fill="x", pady=(5, 5))
+
+        self.tree = ttk.Treeview(self.left_frame, columns=("IP", "Port", "Status"), show="headings")
+        self.tree.heading("IP", text="IP", anchor="w")
+        self.tree.heading("Port", text="Port", anchor="w")
+        self.tree.heading("Status", text="Status", anchor="w")
+        self.tree.column("IP", anchor="w")
+        self.tree.column("Port", anchor="w")
+        self.tree.column("Status", anchor="w")
+        self.tree.pack(fill="both", expand=True)
+        self.tree.bind("<<TreeviewSelect>>", self.display_output)
+
+        # RIGHT FRAME
+        self.right_frame = ttk.Frame(self.main_frame, width=450)
+        self.right_frame.pack(side="right", fill="both", expand=True, padx=10)
+
+        self.username_label = ttk.Label(self.right_frame, text="SSH Username:")
+        self.username_label.pack(fill="x")
+        self.username_entry = ttk.Entry(self.right_frame)
+        self.username_entry.pack(fill="x", pady=(0, 5))
+
+        # Filter
+        self.command_label = ttk.Label(self.right_frame, text="Filter Commands by Keyword:")
+        self.command_label.pack(fill="x", pady=(0, 2))  # <-- THIS LINE WAS MISSING
+        self.command_entry = ttk.Entry(self.right_frame)
+        self.command_entry.pack(fill="x", pady=(0, 5))
+        self.command_entry.bind("<KeyRelease>", self.filter_commands)
+
+        self.command_listbox = tk.Listbox(self.right_frame, height=5)
+        self.command_listbox.pack(fill="x", pady=(0, 5))
+        self.command_listbox.bind("<<ListboxSelect>>", self.select_command_from_list)
+
+        # Preview Window
+        self.command_preview_label = ttk.Label(self.right_frame, text="Command to Be Run:")
+        self.command_preview_label.pack(fill="x", pady=(0, 2))  # <-- THIS LINE WAS MISSING
+        self.command_preview = tk.Text(self.right_frame, height=3, state="disabled", wrap="word")
+        self.command_preview.pack(fill="x", pady=(0, 5))
+
+        # Output Display in fixed-height scrollable frame
+        output_frame = ttk.Frame(self.right_frame)
+        output_frame.pack(fill="both", expand=False, pady=(0, 5))
+
+        self.output_display_label = ttk.Label(output_frame, text="Result of Command:")
+        self.output_display_label.pack(fill="x", pady=(0, 2))  # <-- THIS LINE WAS MISSING
+        self.output_display = tk.Text(output_frame, wrap="word", height=10, state="disabled")
+        self.output_display.pack(side="left", fill="both", expand=True)
+
+        scrollbar = ttk.Scrollbar(output_frame, command=self.output_display.yview)
+        scrollbar.pack(side="right", fill="y")
+
+        self.output_display.config(yscrollcommand=scrollbar.set)
+
+        # Buttons
+        button_frame = ttk.Frame(self.right_frame)
+        button_frame.pack(fill="x", pady=(0, 5))
+
+        self.go_button = ttk.Button(button_frame, text="Run Command", command=self.ask_password_then_execute)
+        self.go_button.pack(side="left", expand=True, fill="x", padx=(0, 5))
+
+        self.export_button = ttk.Button(button_frame, text="Export", command=self.export_results)
+        self.export_button.pack(side="left", expand=True, fill="x")
+
+
+    def filter_commands(self, event=None):
+        typed = self.command_entry.get().lower()
+        self.command_listbox.delete(0, tk.END)
+
+        for key in sorted(self.commands.keys()):
+            command = self.commands[key].get("command", "").lower()
+            if typed in key.lower() or typed in command:
+                self.command_listbox.insert(tk.END, key)
+
+
+    def browse_csv(self):
+        """Open file dialog to choose and load a CSV file."""
+        initial_dir = os.path.abspath("assets")
+        file_path = filedialog.askopenfilename(
+            filetypes=[("CSV Files", "*.csv")],
+            initialdir=initial_dir
+        )
+        if file_path:
+            self.load_hosts(file_path)
+
+
+    def select_command_from_list(self, event=None):
+        if not self.command_listbox.curselection():
+            return
+
+        index = self.command_listbox.curselection()[0]
+        selected = self.command_listbox.get(index)
+        self.command_entry.delete(0, tk.END)
+        self.command_entry.insert(0, selected)
+        self.selected_command_key = selected
+        self.update_command_preview()
+
+
+
+    def load_hosts(self, file_path):
+        self.hosts = load_csv(file_path)
+        for idx, host in enumerate(self.hosts):
+            item_id = self.tree.insert("", "end", values=(host["ip"], host["port"], "Pending"))
+            self.tree_items[item_id] = idx
+
+    def load_commands(self, directory_path):
+        categorized = load_json_commands(directory_path)
+        self.commands = {}  # Flattened command map with full keys
+
+        dropdown_items = []
+        for category in sorted(categorized.keys()):
+            for label in sorted(categorized[category].keys()):
+                full_key = f"{category}: {label}"
+                self.commands[full_key] = categorized[category][label]
+                dropdown_items.append(full_key)
+
+        # Update Listbox instead of old Combobox
+        self.command_listbox.delete(0, tk.END)
+        for item in sorted(dropdown_items):
+            self.command_listbox.insert(tk.END, item)
+
+
+
+    def update_command_preview(self, event=None):
+        key = getattr(self, 'selected_command_key', None)
+        if not key:
+            return
+        command = self.commands.get(key, {}).get("command", "")
+        self.command_preview.config(state="normal")
+        self.command_preview.delete("1.0", tk.END)
+        self.command_preview.insert(tk.END, command)
+        self.command_preview.config(state="disabled")
+
+
+    def start_execution(self):
+        username = self.username_entry.get()
+        password = getattr(self, 'ssh_password', '')
+
+        if not self.hosts:
+            messagebox.showerror("No Hosts Loaded", "You must load a hosts CSV file before running a command.")
+            return
+
+        if not username or not password:
+            messagebox.showerror("Missing Credentials", "Username or password is missing.")
+            return
+
+        # Add credentials to each host
+        for host in self.hosts:
+            host.update({
+                "username": username,
+                "password": password,
+            })
+
+        command_info = self.commands.get(self.selected_command_key)
+        if not command_info:
+            messagebox.showerror("Command Error", "No command selected.")
+            return
+
+        # Use ThreadPoolExecutor to limit concurrency
+        with ThreadPoolExecutor(max_workers=MAX_THREADS) as executor:
+            for host in self.hosts:
+                executor.submit(run_ssh_task, host, command_info, self.queue)
+
+        self.root.after(100, self.poll_queue)
+
+
+    def export_results(self):
+        """Export current SSH results to an XLSX file."""
+        if not self.hosts:
+            messagebox.showwarning("No Data", "No host data available to export.")
+            return
+
+        filetypes = [("Excel files", "*.xlsx")]
+        default_filename = f"results_{self._get_timestamp_for_filename()}.xlsx"
+        filepath = filedialog.asksaveasfilename(
+            defaultextension=".xlsx",
+            filetypes=filetypes,
+            initialfile=default_filename
+        )
+
+        if not filepath:
+            return  # User canceled
+
+        try:
+            save_results(self.hosts, filepath)
+            messagebox.showinfo("Export Successful", f"Results saved to:\n{filepath}")
+            os.startfile(filepath)
+        except Exception as e:
+            messagebox.showerror("Export Failed", str(e))
+
+    def _get_timestamp_for_filename(self):
+        """Utility to create timestamp string for filenames."""
+        from datetime import datetime
+        return datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    def poll_queue(self):
+        try:
+            while True:
+                result = self.queue.get_nowait()
+                self.update_tree(result)
+        except queue.Empty:
+            self.root.after(100, self.poll_queue)
+
+    def ask_password_then_execute(self):
+        if not self.hosts:
+            messagebox.showerror("No Hosts Loaded", "You must load a hosts CSV file before running a command.")
+            return
+
+        password_popup = tk.Toplevel(self.root)
+        password_popup.title("Enter SSH Password")
+        password_popup.geometry("300x120")
+        password_popup.grab_set()
+
+        label = ttk.Label(password_popup, text="SSH Password:")
+        label.pack(pady=10)
+
+        password_entry = ttk.Entry(password_popup, show="*")
+        password_entry.pack(fill="x", padx=10)
+        password_entry.focus_set()
+
+        def on_submit(event=None):
+            self.ssh_password = password_entry.get()
+            password_popup.destroy()
+            self.start_execution()
+
+        submit_btn = ttk.Button(password_popup, text="Submit", command=on_submit)
+        submit_btn.pack(pady=10)
+
+        password_entry.bind("<Return>", on_submit)
+
+
+    def update_tree(self, result):
+        for item_id, idx in self.tree_items.items():
+            if self.hosts[idx]["ip"] == result["ip"]:
+                self.hosts[idx].update(result)
+                if result["error"]:
+                    status = f"Error: {result['error']}"
+                else:
+                    status = "Complete"
+                self.tree.set(item_id, "Status", status)
+                break
+
+
+    def display_output(self, event):
+        selected = self.tree.focus()
+        if selected:
+            idx = self.tree_items[selected]
+            output = self.hosts[idx].get("output", "")
+            error = self.hosts[idx].get("error", "")
+            display_text = f"Output:\n{output}\n\nError:\n{error}" if error else f"Output:\n{output}"
+
+            self.output_display.config(state="normal")
+            self.output_display.delete("1.0", tk.END)
+            self.output_display.insert(tk.END, display_text)
+            self.output_display.config(state="disabled")
+
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    Style("darkly")
+    app = HostLoggerApp(root)
+    root.mainloop()
