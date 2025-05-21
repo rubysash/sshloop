@@ -1,6 +1,7 @@
 {
   "CPU Model": {
     "command": "lscpu | grep 'Model name'",
-    "parse": "Model name:\\s+(.+)"
+    "parse": "Model name:\\s+(.+)",
+    "description": "Will Add.."
   }
 }

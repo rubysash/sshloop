@@ -1,6 +1,7 @@
 {
   "Memory Usage": {
     "command": "free -m | grep Mem",
-    "parse": "Mem:\\s+(\\d+)"
+    "parse": "Mem:\\s+(\\d+)",
+    "description": "Will Add.."
   }
 }

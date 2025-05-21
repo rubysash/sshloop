@@ -1,6 +1,7 @@
 {
   "Syslog Configuration": {
     "command": "clish -c 'show syslog'",
-    "parse": "Target: (\\d+\\.\\d+\\.\\d+\\.\\d+)"
+    "parse": "Target: (\\d+\\.\\d+\\.\\d+\\.\\d+)",
+    "description": "Will Add.."
   }
 }

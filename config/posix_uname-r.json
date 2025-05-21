@@ -1,6 +1,7 @@
 {
   "System Version": {
     "command": "uname -r all",
-    "parse": "OS Version: (.+)"
+    "parse": "OS Version: (.+)",
+    "description": "Will Add.."
   }
 }

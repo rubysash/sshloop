@@ -1,6 +1,7 @@
 {
   "DNS Servers": {
     "command": "clish -c 'show dns'",
-    "parse": "Primary DNS: (\\d+\\.\\d+\\.\\d+\\.\\d+)"
+    "parse": "Primary DNS: (\\d+\\.\\d+\\.\\d+\\.\\d+)",
+    "description": "Will Add.."
   }
 }

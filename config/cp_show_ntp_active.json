@@ -1,6 +1,7 @@
 {
   "NTP Status": {
     "command": "clish -c 'show ntp active'",
-    "parse": "NTP synchronization: (\\w+)"
+    "parse": "NTP synchronization: (\\w+)",
+    "description": "Will Add.."
   }
 }

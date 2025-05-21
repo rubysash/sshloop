@@ -1,6 +1,7 @@
 {
   "System Time": {
     "command": "/bin/date",
-    "parse": "(.+)"
+    "parse": "(.+)",
+    "description": "Will Add.."
   }
 }

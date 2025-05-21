@@ -43,9 +43,11 @@ class HostLoggerApp:
         self.left_frame = ttk.Frame(self.main_frame, width=450)
         self.left_frame.pack(side="left", fill="both", expand=True)
 
+        ## Treeview Button to Load
         self.load_button = ttk.Button(self.left_frame, text="Load Hosts CSV", command=self.browse_csv)
         self.load_button.pack(fill="x", pady=(5, 5))
 
+        ## Treeview
         self.tree = ttk.Treeview(self.left_frame, columns=("IP", "Port", "Status"), show="headings")
         self.tree.heading("IP", text="IP", anchor="w")
         self.tree.heading("Port", text="Port", anchor="w")
@@ -56,44 +58,57 @@ class HostLoggerApp:
         self.tree.pack(fill="both", expand=True)
         self.tree.bind("<<TreeviewSelect>>", self.display_output)
 
+        ## Description Field 
+        self.description_label = ttk.Label(self.left_frame, text="Command Description:")
+        self.description_label.pack(fill="x", pady=(5, 0))
+        self.command_description = tk.Text(self.left_frame, height=5, wrap="word", state="disabled")
+        self.command_description.pack(fill="x", padx=5, pady=(0, 5))
+
         # RIGHT FRAME
         self.right_frame = ttk.Frame(self.main_frame, width=450)
         self.right_frame.pack(side="right", fill="both", expand=True, padx=10)
 
+        ## Same Username for all
         self.username_label = ttk.Label(self.right_frame, text="SSH Username:")
         self.username_label.pack(fill="x")
         self.username_entry = ttk.Entry(self.right_frame)
         self.username_entry.pack(fill="x", pady=(0, 5))
 
-        # Filter
+        ## Filter
         self.command_label = ttk.Label(self.right_frame, text="Filter Commands by Keyword:")
-        self.command_label.pack(fill="x", pady=(0, 2))  # <-- THIS LINE WAS MISSING
+        self.command_label.pack(fill="x", pady=(0, 2))
         self.command_entry = ttk.Entry(self.right_frame)
         self.command_entry.pack(fill="x", pady=(0, 5))
         self.command_entry.bind("<KeyRelease>", self.filter_commands)
 
+        ## Filtered ListBox
         self.command_listbox = tk.Listbox(self.right_frame, height=5)
         self.command_listbox.pack(fill="x", pady=(0, 5))
         self.command_listbox.bind("<<ListboxSelect>>", self.select_command_from_list)
 
-        # Preview Window
+        ## Sample Command from Json
         self.command_preview_label = ttk.Label(self.right_frame, text="Command to Be Run:")
-        self.command_preview_label.pack(fill="x", pady=(0, 2))  # <-- THIS LINE WAS MISSING
+        self.command_preview_label.pack(fill="x", pady=(0, 2))
         self.command_preview = tk.Text(self.right_frame, height=3, state="disabled", wrap="word")
         self.command_preview.pack(fill="x", pady=(0, 5))
 
-        # Output Display in fixed-height scrollable frame
+        ## Manual Command Input
+        self.manual_command_label = ttk.Label(self.right_frame, text="Manual Command (Overrides Selection):")
+        self.manual_command_label.pack(fill="x", pady=(0, 2))
+        self.manual_command_entry = ttk.Entry(self.right_frame)
+        self.manual_command_entry.pack(fill="x", pady=(0, 5))
+
+        # Frame in Right Side for Output
         output_frame = ttk.Frame(self.right_frame)
         output_frame.pack(fill="both", expand=False, pady=(0, 5))
 
         self.output_display_label = ttk.Label(output_frame, text="Result of Command:")
-        self.output_display_label.pack(fill="x", pady=(0, 2))  # <-- THIS LINE WAS MISSING
+        self.output_display_label.pack(fill="x", pady=(0, 2))
         self.output_display = tk.Text(output_frame, wrap="word", height=10, state="disabled")
         self.output_display.pack(side="left", fill="both", expand=True)
 
         scrollbar = ttk.Scrollbar(output_frame, command=self.output_display.yview)
         scrollbar.pack(side="right", fill="y")
-
         self.output_display.config(yscrollcommand=scrollbar.set)
 
         # Buttons
@@ -105,6 +120,7 @@ class HostLoggerApp:
 
         self.export_button = ttk.Button(button_frame, text="Export", command=self.export_results)
         self.export_button.pack(side="left", expand=True, fill="x")
+
 
 
     def filter_commands(self, event=None):

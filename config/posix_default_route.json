@@ -1,6 +1,7 @@
 {
   "Default Gateway": {
     "command": "ip route | grep default",
-    "parse": "default via (\\d+\\.\\d+\\.\\d+\\.\\d+)"
+    "parse": "default via (\\d+\\.\\d+\\.\\d+\\.\\d+)",
+    "description": "This command retrieves the default gateway IP address using the 'ip route' tool on POSIX systems."
   }
 }

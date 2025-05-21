@@ -1,6 +1,7 @@
 {
   "Show Hostname": {
     "command": "hostname",
-    "parse": "(.+)"
+    "parse": "(.+)",
+    "description": "Will Add.."
   }
 }
