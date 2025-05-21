@@ -1,4 +1,4 @@
-# CSV Host Logger
+# SSH Looper, 1 Shot Command, Reports
 
 A threaded Python Tkinter GUI tool to SSH into multiple hosts from a CSV file, run a selected command, parse its output, and save all results to an XLSX file.
 
